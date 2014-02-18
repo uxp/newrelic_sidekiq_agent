@@ -28,6 +28,7 @@ newrelic:
 # Agent Configuration:
 #
 agents:
+  user: nobody
   sidekiq_status_agent:
     -
       instance_name: "App name"

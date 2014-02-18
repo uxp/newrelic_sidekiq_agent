@@ -3,17 +3,39 @@
 require "rubygems"
 require "bundler/setup"
 require "newrelic_plugin"
+require 'etc'
 
 require 'sidekiq'
 require 'sidekiq/api'
 require 'redis'
+
+module NewRelic
+  module Plugin
+    class Run
+      def loop_forever_dropped_uid
+        user = @config.agents[:user] || 'nobody'
+        begin
+          passwd = Etc.getpwnam(user)
+          Process::Sys.setuid(passwd.uid) if passwd and passwd.uid != 0
+        rescue ArgumentError => err
+          PlatformLogger.warn("WARNING: User '#{user}' does not exist. Continuing execution as '#{Etc.getlogin}'")
+        ensure
+          loop_forever_original
+        end
+
+      end
+      alias :loop_forever_original :loop_forever
+      alias :loop_forever :loop_forever_dropped_uid
+    end
+  end
+end
 
 module SidekiqStatusAgent
 
   class Agent < NewRelic::Plugin::Agent::Base
 
     agent_guid "com.secondimpression.newrelic-sidekiq-agent"
-    agent_config_options :instance_name, :uri, :namespace
+    agent_config_options :instance_name, :uri, :namespace, :user
     agent_version '0.0.2'
     agent_human_labels('Sidekiq') { instance_name }
 

@@ -3,9 +3,5 @@
 require 'rubygems'
 require 'daemons'
 require 'bundler/setup'
-require 'etc'
-
-uid = Etc.getpwnam('newrelic').uid
-Process::Sys.setuid(uid)
 
 Daemons.run(File.dirname(Pathname.new(__FILE__).realpath) + '/newrelic_sidekiq_agent')
